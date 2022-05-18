@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use take_home::msg::{ScoreResponse, OwnerResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use take_home::msg::{ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg, ScoreResponse};
 use take_home::state::State;
 
 fn main() {

@@ -9,13 +9,20 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    SetScore { entering_addr: String, entering_token: String, score: i32 },
+    SetScore {
+        entering_addr: String,
+        entering_token: String,
+        score: i32,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    GetScore { entering_addr: String, entering_token: String },
+    GetScore {
+        entering_addr: String,
+        entering_token: String,
+    },
     GetOwner {},
 }
 
