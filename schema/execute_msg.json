@@ -1,32 +1,28 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecuteMsg",
-  "anyOf": [
+  "oneOf": [
     {
       "type": "object",
       "required": [
-        "increment"
+        "set_score"
       ],
       "properties": {
-        "increment": {
-          "type": "object"
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "reset"
-      ],
-      "properties": {
-        "reset": {
+        "set_score": {
           "type": "object",
           "required": [
-            "count"
+            "entering_addr",
+            "entering_token",
+            "score"
           ],
           "properties": {
-            "count": {
+            "entering_addr": {
+              "type": "string"
+            },
+            "entering_token": {
+              "type": "string"
+            },
+            "score": {
               "type": "integer",
               "format": "int32"
             }

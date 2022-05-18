@@ -1,14 +1,38 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "QueryMsg",
-  "anyOf": [
+  "oneOf": [
     {
       "type": "object",
       "required": [
-        "get_count"
+        "get_score"
       ],
       "properties": {
-        "get_count": {
+        "get_score": {
+          "type": "object",
+          "required": [
+            "entering_addr",
+            "entering_token"
+          ],
+          "properties": {
+            "entering_addr": {
+              "type": "string"
+            },
+            "entering_token": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "get_owner"
+      ],
+      "properties": {
+        "get_owner": {
           "type": "object"
         }
       },
