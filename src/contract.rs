@@ -38,12 +38,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SetScore {entering_addr, score} => try_set_score(deps, info, entering_addr, score),
+        ExecuteMsg::SetScore {entering_addr, entering_token, score} => try_set_score(deps, info, entering_addr, entering_token, score),
     }
 }
 
-pub fn try_set_score(deps: DepsMut, info: MessageInfo, entering_addr: String, score: i32) -> Result<Response, ContractError> {
+pub fn try_set_score(deps: DepsMut, info: MessageInfo, entering_addr: String, entering_token: String, score: i32) -> Result<Response, ContractError> {
     let entry_addr = deps.api.addr_validate(&entering_addr)?;
+    let entry_token = entering_token.as_str();
     let state = STATE.load(deps.storage)?;
     let update_score = |_| -> StdResult<i32> {
         Ok(score)
@@ -51,7 +52,8 @@ pub fn try_set_score(deps: DepsMut, info: MessageInfo, entering_addr: String, sc
     if info.sender != state.owner {
         return Err(ContractError:: Unauthorized {});
     }
-    SCORES.update(deps.storage, &entry_addr, update_score)?;
+
+    SCORES.update(deps.storage, (&entry_addr, entry_token), update_score)?;
     Ok(Response::new().add_attribute("method", "set_score")) 
 }
 
@@ -59,7 +61,7 @@ pub fn try_set_score(deps: DepsMut, info: MessageInfo, entering_addr: String, sc
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetOwner {} => to_binary(&query_owner(deps)?),
-        QueryMsg::GetScore {entering_addr} => to_binary(&query_score(deps, entering_addr)?),
+        QueryMsg::GetScore {entering_addr, entering_token} => to_binary(&query_score(deps, entering_addr, entering_token)?),
     }
 }
 
@@ -68,9 +70,10 @@ fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
     Ok(OwnerResponse { owner: state.owner }) 
 }
 
-fn query_score(deps: Deps, entering_addr: String) -> StdResult<ScoreResponse> {
+fn query_score(deps: Deps, entering_addr: String, entering_token: String) -> StdResult<ScoreResponse> {
     let entry_addr = deps.api.addr_validate(&entering_addr)?;
-    let map_score = SCORES.load(deps.storage, &entry_addr)?;
+    let entry_token = entering_token.as_str();
+    let map_score = SCORES.load(deps.storage, (&entry_addr, entry_token))?;
     Ok (ScoreResponse {score: map_score})
 }
 
@@ -99,7 +102,7 @@ mod tests {
 
     #[test]
     fn set_score() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token")); 
+        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
 
         let msg = InstantiateMsg {};
         let info = mock_info("creator", &coins(2, "token"));
@@ -107,17 +110,17 @@ mod tests {
 
         /* setting the score basic start */
         let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone".to_string(), score: 3}; 
+        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone".to_string(), entering_token: "token Mirror".to_string(), score: 3}; 
         let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
 
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone".to_string()}).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone".to_string(), entering_token: "token Mirror".to_string()}).unwrap();
         let value: ScoreResponse = from_binary(&res).unwrap();
         assert_eq!(3, value.score);
         /* setting the score basic end */
 
         /* unauthorized setting the score start */
         let unauth_info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::SetScore { entering_addr: "anyone".to_string(), score: 10 };
+        let msg = ExecuteMsg::SetScore { entering_addr: "anyone".to_string(), entering_token: "token Mirror".to_string(), score: 10 };
         let res = execute(deps.as_mut(), mock_env(), unauth_info, msg);
         match res {
             Err(ContractError::Unauthorized {}) => {}
@@ -127,28 +130,44 @@ mod tests {
 
         /* setting the score of another address start */
         let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone2".to_string(), score: 13}; 
+        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone2".to_string(), entering_token: "token Mirror".to_string(), score: 13}; 
         let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
 
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone2".to_string()}).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone2".to_string(), entering_token: "token Mirror".to_string()}).unwrap();
         let value: ScoreResponse = from_binary(&res).unwrap();
         assert_eq!(13, value.score);
         /* setting the score of another address end */
 
         /* setting the score of first address again start */
         let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone".to_string(), score: 25}; 
+        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone".to_string(), entering_token: "token Mirror".to_string(), score: 25}; 
         let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
 
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone".to_string()}).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone".to_string(), entering_token: "token Mirror".to_string()}).unwrap();
         let value: ScoreResponse = from_binary(&res).unwrap();
         assert_eq!(25, value.score);
         /* setting the score of first address again end */
 
         /* verify the second score untouched start */
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone2".to_string()}).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone2".to_string(), entering_token: "token Mirror".to_string()}).unwrap();
         let value: ScoreResponse = from_binary(&res).unwrap();
         assert_eq!(13, value.score);
         /* verify the second score untouched end */
+
+        /* storing using another token start */
+        let auth_info = mock_info("creator", &coins(2, "token"));
+        let msg = ExecuteMsg:: SetScore { entering_addr: "anyone".to_string(), entering_token: "token TerraUST".to_string(), score: 57}; 
+        let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
+
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone".to_string(), entering_token: "token TerraUST".to_string()}).unwrap();
+        let value: ScoreResponse = from_binary(&res).unwrap();
+        assert_eq!(57, value.score);
+        /* storing using another token end */
+
+        /* verify the other token is left untouched start */
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetScore { entering_addr: "anyone".to_string(), entering_token: "token Mirror".to_string()}).unwrap();
+        let value: ScoreResponse = from_binary(&res).unwrap();
+        assert_eq!(25, value.score);
+        /* verify the other token is left untouched end*/
     } 
 }

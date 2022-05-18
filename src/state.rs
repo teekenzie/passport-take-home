@@ -10,4 +10,4 @@ pub struct State {
 }
 
 pub const STATE: Item<State> = Item::new("state");
-pub const SCORES: Map<&Addr, i32> = Map::new("scores");
+pub const SCORES: Map<(&Addr, &str), i32> = Map::new("scores");
