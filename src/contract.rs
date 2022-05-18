@@ -6,7 +6,6 @@ use cw2::set_contract_version;
 use crate::error::ContractError;
 use crate::msg::{ScoreResponse, OwnerResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, STATE, SCORES};
-use cosmwasm_std::Addr;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:take-home";
